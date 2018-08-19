@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Dapper;
 
 namespace DataCollectorRestApi
 {
@@ -105,19 +106,27 @@ namespace DataCollectorRestApi
 
         public static string GetServerSequence(SqlCommand cmd, string VNAME, string DIVISION, string Prefix)
         {
-            cmd.CommandText = "SELECT CURNO FROM RMD_SEQUENCES WHERE VNAME = '" + VNAME + "' AND DIVISION ='" + DIVISION + "'";
-            object vchr = cmd.ExecuteScalar();
-            if (vchr != null)
-                return Prefix + vchr.ToString();
-            else
+            try
             {
-                cmd.CommandText = "INSERT INTO RMD_SEQUENCES(VNAME, CurNo, DIVISION) VALUES ('" + VNAME + "',1,'" + DIVISION + "')";
-                cmd.ExecuteNonQuery();
-                return Prefix + "1";
-                //cmd.CommandText = "SELECT CURNO FROM RMD_SEQUENCES WHERE VNAME = '" + VNAME + "'";
-                //vchr = cmd.ExecuteScalar();
-                //if (vchr != null)
-                //    return Prefix + vchr.ToString();
+                cmd.CommandText = "SELECT CURNO FROM RMD_SEQUENCES WHERE VNAME = '" + VNAME + "' AND DIVISION ='" + DIVISION + "'";
+                object vchr = cmd.ExecuteScalar();
+                if (vchr != null)
+                    return Prefix + vchr.ToString();
+                else
+                {
+                    cmd.CommandText = "INSERT INTO RMD_SEQUENCES(VNAME, CurNo, DIVISION) VALUES ('" + VNAME + "',1,'" + DIVISION + "')";
+                    cmd.ExecuteNonQuery();
+                    return Prefix + "1";
+                    //cmd.CommandText = "SELECT CURNO FROM RMD_SEQUENCES WHERE VNAME = '" + VNAME + "'";
+                    //vchr = cmd.ExecuteScalar();
+                    //if (vchr != null)
+                    //    return Prefix + vchr.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                GlobalClass.writeErrorToExternalFile(ex.Message,"GetServerSequence");
+                return null;
             }
         }
 
@@ -126,6 +135,36 @@ namespace DataCollectorRestApi
             byte[] bytes = new byte[str.Length * sizeof(char)];
             System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
+        }
+
+        public static void writeErrorToExternalFile(string errorMessage, string SOURCE,string DIVISION = "", string TABLE = "")
+        {
+            try
+            {
+                using (SqlConnection con = new SqlConnection(DataConnectionString))
+                {
+                    con.Execute(@"IF not exists(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DATACOLLECTORAPI_ERRORS')
+                                        CREATE TABLE DATACOLLECTORAPI_ERRORS(
+                                            DATE datetime,
+                                            DIVISION varchar(20) NULL,
+                                            [TABLE] VARCHAR(50),
+                                            [SOURCE] VARCHAR(100),
+											ERRORMESSAGE VARCHAR(MAX)
+											)");
+                    con.Execute("INSERT INTO DATACOLLECTORAPI_ERRORS (DATE,DIVISION,[TABLE],[SOURCE],ERRORMESSAGE) VALUES(@DATE,@DIVISION,@TABLE,@SOURCE,@ERRORMESSAGE)", new { DATE = DateTime.Now, DIVISION = DIVISION, TABLE = TABLE, ERRORMESSAGE = errorMessage, SOURCE = SOURCE });
+                }
+
+            }
+            catch (Exception ex)
+            {
+                //if (File.Exists(Path.Combine(HostingEnvironment.ApplicationPhysicalPath, "masterSyncErrors.txt")))
+                //{
+                //    using (StreamWriter sw = new StreamWriter(Path.Combine(HostingEnvironment.ApplicationPhysicalPath, "masterSyncErrors.txt"), true))
+                //    {
+                //        sw.WriteLine(" Date : " + DateTime.Now + "  Error : " + ex.Message);
+                //    }
+                //}
+            }
         }
     }
 }

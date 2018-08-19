@@ -110,6 +110,8 @@ namespace DataCollectorRestApi.Controllers
             }
             return retMsg;
         }
+
+
         //static string Encrypt(string Text, string Key)
         //{
         //    int i;
@@ -128,6 +130,19 @@ namespace DataCollectorRestApi.Controllers
         //}
 
 
+        public IEnumerable<Dictionary<string, object>> DataTableToDictionary(System.Data.DataTable dataTable)
+        {
+
+            for (int i = 0; i < dataTable.Rows.Count; i++)
+            {
+                Dictionary<string, object> ret = new Dictionary<string, object>();
+                for (int c = 0; c < dataTable.Columns.Count; c++)
+                {
+                    ret.Add(dataTable.Columns[c].Caption, dataTable.Rows[i][c]);
+                }
+                yield return ret;
+            }
+        }
 
 
         [Route("api/getUserProfile")]
@@ -163,10 +178,11 @@ namespace DataCollectorRestApi.Controllers
                 dt = new DataTable();
 
                 try
-                {//SELECT M.MCODE, M.MENUCODE, M.DESCA, A.ACNAME, M.RATE_A, M.BASEUNIT, M.PRATE_A FROM MENUITEM M LEFT JOIN RMD_ACLIST A ON M.SUPCODE = A.ACID
+                {
                     if (settingIndex == "1")
                     {
-                        dt = db.getData("SELECT MENUCODE AS MCODE, MENUCODE, DESCRIPTION AS DESCA, PARENT,'' TYPE,'' SUPCODE,'' BASEUNIT,'' RATE_A,'' PRATE_A,'' MGROUP, '' EDATE,'' CRDATE  FROM MENUITEM_PART", cnMain);
+                        dt = db.getData("SELECT MCODE, MENUCODE, DESCA, PARENT, TYPE, SUPCODE, ISNULL(BASEUNIT,'PC') BASEUNIT, RATE_A, PRATE_A, MGROUP, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE,'' CRDATE FROM MENUITEM WHERE TYPE = 'A'", cnMain);
+                        //dt = db.getData("SELECT MENUCODE AS MCODE, MENUCODE, DESCRIPTION AS DESCA, PARENT,'' TYPE,'' SUPCODE,'' BASEUNIT,'' RATE_A,'' PRATE_A,'' MGROUP, '' EDATE,'' CRDATE  FROM MENUITEM_PART", cnMain);
                     }
                     else
                     {
@@ -182,9 +198,6 @@ namespace DataCollectorRestApi.Controllers
                 }
             }
         }
-
-
-
 
         [Route("api/getBarcode")]
         [HttpGet("{settingIndex}")]
@@ -278,42 +291,60 @@ namespace DataCollectorRestApi.Controllers
                     return new NotFoundObjectResult(Ex);
                 }
             }
-
-
-        }
-        public IEnumerable<Dictionary<string, object>> DataTableToDictionary(System.Data.DataTable dataTable)
-        {
-
-            for (int i = 0; i < dataTable.Rows.Count; i++)
-            {
-                Dictionary<string, object> ret = new Dictionary<string, object>();
-                for (int c = 0; c < dataTable.Columns.Count; c++)
-                {
-                    ret.Add(dataTable.Columns[c].Caption, dataTable.Rows[i][c]);
-                }
-                yield return ret;
-            }
-
         }
 
-        public ObjectResult getWareHouse(String settingIndex)
+
+        //[Route("api/getWareHouse")]
+        //[HttpGet("{settingIndex}")]
+        //public ObjectResult getWareHouse(String settingIndex)
+        //{
+        //    using (SqlConnection cnMain = new SqlConnection(GlobalClass.DataConnectionString))
+        //    //using (SqlConnection cnMain = new SqlConnection(constr))
+        //    {
+        //        cnMain.Open();
+        //        dt = new DataTable();
+
+        //        try
+        //        {
+        //            if (settingIndex == "1")
+        //            {
+        //                dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT,'' DIVISION FROM RMD_WAREHOUSE", cnMain);
+        //            }
+        //            else
+        //            {
+        //                dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT, DIVISION FROM RMD_WAREHOUSE", cnMain);
+        //            }
+        //            var retdt = DataTableToDictionary(dt);
+        //            List<Dictionary<string,Object>> retDict  = new List<Dictionary<string,object>>() ;
+        //            foreach(var dic in retdt)
+        //            {
+        //                retDict.Add(dic);
+        //            }
+        //            return new OkObjectResult(retDict);
+        //        }
+        //        catch (Exception E)
+        //        {
+        //            return new NotFoundObjectResult(E);
+        //        }
+        //    }
+        //}
+        
+        [Route("api/getwarehouse")]
+        [HttpGet]
+        public ObjectResult getwarehouse()
         {
             using (SqlConnection cnMain = new SqlConnection(GlobalClass.DataConnectionString))
             //using (SqlConnection cnMain = new SqlConnection(constr))
             {
                 cnMain.Open();
                 dt = new DataTable();
-
                 try
                 {
-                    if (settingIndex == "1")
-                    {
-                        dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT,'' DIVISION FROM RMD_WAREHOUSE", cnMain);
-                    }
-                    else
-                    {
-                        dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT, DIVISION FROM RMD_WAREHOUSE", cnMain);
-                    }
+
+                    //dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT,'' DIVISION FROM RMD_WAREHOUSE", cnMain);
+                               
+                    dt = db.getData("SELECT NAME, ADDRESS,DIVISION FROM RMD_WAREHOUSE", cnMain);
+
                     var retdt = DataTableToDictionary(dt);
                     return new OkObjectResult(retdt);
                 }
@@ -345,6 +376,7 @@ namespace DataCollectorRestApi.Controllers
                 }
             }
         }
+
         [Route("api/getOrderProd")]
         [HttpGet("{settingIndex}")]
         public ObjectResult getOrderProd(String settingIndex)
@@ -359,11 +391,15 @@ namespace DataCollectorRestApi.Controllers
                 {
                     if (settingIndex == "1")
                     {
-                        dt = db.getData("SELECT OP.VCHRNO, OP.MCODE,'' BARCODE, OP.QUANTITY, OP.RATE, ISNULL(TM.TRNAC,'') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO", cnMain);
+                        dt = db.getData("SELECT distinct OP.VCHRNO, ISNULL(TM.TRNAC, '') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO WHERE VoucherStatus IS NULL order by vchrno", cnMain);
+                                                
+                        //dt = db.getData("SELECT OP.VCHRNO, OP.MCODE,'' BARCODE, OP.QUANTITY, OP.RATE, ISNULL(TM.TRNAC,'') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO", cnMain);
                     }
                     else
                     {
-                        dt = db.getData("SELECT OP.VCHRNO, OP.MCODE,ISNULL(OP.BC,'') BARCODE, OP.QUANTITY, OP.RATE, ISNULL(TM.TRNAC,'') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO WHERE VoucherStatus IS NULL", cnMain);
+                        dt = db.getData("SELECT distinct OP.VCHRNO, ISNULL(TM.TRNAC, '') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO WHERE VoucherStatus IS NULL order by vchrno", cnMain);
+
+                        //dt = db.getData("SELECT OP.VCHRNO, OP.MCODE,ISNULL(OP.BC,'') BARCODE, OP.QUANTITY, OP.RATE, ISNULL(TM.TRNAC,'') SUPPLIERCODE FROM RMD_ORDERPROD OP INNER JOIN RMD_TRNMAIN TM ON OP.VCHRNO = TM.VCHRNO WHERE VoucherStatus IS NULL", cnMain);
                     }
                     var retdt = DataTableToDictionary(dt);
                     return new OkObjectResult(retdt);
@@ -374,6 +410,8 @@ namespace DataCollectorRestApi.Controllers
                 }
             }
         }
+
+
         [Route("api/getDivision")]
         [HttpGet]
         public ObjectResult getDivision()
@@ -413,19 +451,17 @@ namespace DataCollectorRestApi.Controllers
                 }
                 catch (Exception E)
                 {
-                    return new NotFoundObjectResult( E);
+                    return new NotFoundObjectResult(E);
                 }
             }
         }
-
-
-
+                
         [Route("api/saveDataCollect")]
-        [HttpGet("{dataCollect}")]
-        public string saveDataCollect(string dataCollect)
+        [HttpPost]
+        //[HttpGet("{dataCollect}")]
+        public string saveDataCollect([FromBody]List<LoadDataCollect> dataCollect)
         {
-
-            LoadDataCollect[] ldcJson;
+            List<LoadDataCollect> ldcJson;
             SqlCommand cmd = new SqlCommand();
             string TNO = "";
             string batch = "";
@@ -441,7 +477,9 @@ namespace DataCollectorRestApi.Controllers
             string division = "";
             string location = "";
             //string timeStamp = "";
-            ldcJson = JsonConvert.DeserializeObject<LoadDataCollect[]>(dataCollect);
+
+            ldcJson = dataCollect;
+            //ldcJson = JsonConvert.DeserializeObject<LoadDataCollect[]>(dataCollect);
 
             using (SqlConnection cnMain = new SqlConnection(GlobalClass.DataConnectionString))
             //using (SqlConnection cnMain = new SqlConnection(constr))
@@ -454,34 +492,7 @@ namespace DataCollectorRestApi.Controllers
                 {
                     dt = db.getData("SELECT CurNo FROM RMD_SEQUENCES WHERE VNAME='MANUALSTOCK'", cnMain, trn);
                     TNO = dt.Rows[0][0].ToString();
-
-                    /*ddt = db.getData("SELECT IDBTIMESTAMPCHECK FROM SETTING", cnMain, trn);
-                    timeStamp = dt.Rows[0][0].ToString();*/
-
-
-
-                    /* db.executeNonQuery("INSERT INTO MANUALSTOCKS (TNO, BATCH, SHEETNO, MCODE, MENUCODE, QTY, WAREHOUSE, TRNTIME, TRNDATE, TRNDATE, BCODE) SELECT '" + TNO + "', @BATCH, @SHEETNO, @MCODE, @MENUCODE, @QTY, @WAREHOUSE, '" + DateTime.Now.ToString("h:mm:ss tt")
-                                + "', @TRNDATE, @BCODE", trn, cnMain);
-                     cmd.Parameters.Add("@BATCH", SqlDbType.VarChar);
-                     cmd.Parameters.Add("@MENUCODE", SqlDbType.VarChar);
-                     cmd.Parameters.Add("@SHEETNO", SqlDbType.Int);
-                     cmd.Parameters.Add("@MCODE", SqlDbType.VarChar);
-                     cmd.Parameters.Add("@QTY", SqlDbType.Int);
-                     cmd.Parameters.Add("@WAREHOUSE", SqlDbType.VarChar);
-                     cmd.Parameters.Add("@TRNDATE", SqlDbType.DateTime);
-                     cmd.Parameters.Add("@BCODE", SqlDbType.VarChar);*/
-
-                    /*foreach (LoadDataCollect ldc in ldcJson)
-                    {
-                        cmd.Parameters["@BATCH"].Value = ldc.batch;
-                        cmd.Parameters["@MENUCODE"].Value = ldc.menucode;
-                        cmd.Parameters["@SHEETNO"].Value = ldc.batch;
-                        cmd.Parameters["@MCODE"].Value = ldc.batch;
-                        cmd.Parameters["@QTY"].Value = ldc.batch;
-                        cmd.Parameters["@WAREHOUSE"].Value = ldc.batch;
-                        cmd.Parameters["@TRNDATE"].Value = ldc.batch;
-                        cmd.Parameters["@BCODE"].Value = ldc.batch;
-                    }*/
+                    
                     foreach (LoadDataCollect ldc in ldcJson)
                     {
                         batch = ldc.sid;
@@ -495,8 +506,7 @@ namespace DataCollectorRestApi.Controllers
                         trnUser = ldc.trnUser;
                         division = ldc.division;
                         location = ldc.location;
-
-
+                        
                         db.executeNonQuery("INSERT INTO MANUALSTOCKS (TNO, BATCH, SHEETNO, MCODE, MENUCODE, QTY, WAREHOUSE, TRNTIME, TRNDATE, BCODE, TRNUSER, DIVISION, LOCATION) SELECT '" + TNO
                             + "','" + batch + "', '" + sheetNo + "', '" + mcode + "', '" + menucode
                             + "', '" + qty + "', '" + wareHouse + "', '" + trnTime + "', '" + trnDate
@@ -513,19 +523,20 @@ namespace DataCollectorRestApi.Controllers
                     trn.Commit();
                     return TNO;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    GlobalClass.writeErrorToExternalFile(ex.Message, "SaveDatacollect");
+                 
                     trn.Rollback();
                     return "no";
                 }
-
             }
-
         }
 
         [Route("api/saveGrnData")]
-        [HttpGet("{grnDataCollect}")]
-        public string saveGrnData(string grnDataCollect)
+        [HttpPost]
+        //[HttpGet("{grnDataCollect}")]
+        public string saveGrnData([FromBody]LoadGrnCollect[] grnDataCollect)
         {
             LoadGrnCollect[] lgcJson;
             string SERVERDATE;
@@ -549,8 +560,8 @@ namespace DataCollectorRestApi.Controllers
             List<decimal> NONTAXABLE = new List<decimal>();
             decimal DISCOUNT = 0;
 
-
-            lgcJson = JsonConvert.DeserializeObject<LoadGrnCollect[]>(grnDataCollect);
+            lgcJson = grnDataCollect;
+            //lgcJson = JsonConvert.DeserializeObject<LoadGrnCollect[]>(grnDataCollect);
 
             using (SqlConnection cnMain = new SqlConnection(GlobalClass.DataConnectionString))
             //using (SqlConnection cnMain = new SqlConnection(constr))
@@ -656,8 +667,7 @@ namespace DataCollectorRestApi.Controllers
                     cmd.Parameters.AddWithValue("@NONTAXABLE", totNonTaxable);
                     cmd.Parameters.AddWithValue("@PONUMBER", refOrdBill);
                     cmd.ExecuteNonQuery();
-
-
+                    
                     cmd.CommandText = "SP_TRNPROD_ENTRY_GRN";
                     for (int i = 0; i < mcode.Count; i++)
                     {
@@ -713,8 +723,9 @@ namespace DataCollectorRestApi.Controllers
         }
 
         [Route("api/savePrnData")]
-        [HttpGet("{prnDataCollect}")]
-        public string savePrnData(string prnDataCollect)
+        [HttpPost]
+        //[HttpGet("{prnDataCollect}")]
+        public string savePrnData([FromBody]LoadGrnCollect[] prnDataCollect)
         {
             LoadGrnCollect[] lgcJson;
             string SERVERDATE;
@@ -738,8 +749,8 @@ namespace DataCollectorRestApi.Controllers
             List<decimal> NONTAXABLE = new List<decimal>();
             decimal DISCOUNT = 0;
 
-
-            lgcJson = JsonConvert.DeserializeObject<LoadGrnCollect[]>(prnDataCollect);
+            lgcJson = prnDataCollect;
+            //lgcJson = JsonConvert.DeserializeObject<LoadGrnCollect[]>(prnDataCollect);
 
             using (SqlConnection cnMain = new SqlConnection(GlobalClass.DataConnectionString))
             //using (SqlConnection cnMain = new SqlConnection(constr))
@@ -844,8 +855,7 @@ namespace DataCollectorRestApi.Controllers
                     cmd.Parameters.AddWithValue("@NONTAXABLE", totNonTaxable);
                     cmd.Parameters.AddWithValue("@PONUMBER", refOrdBill);
                     cmd.ExecuteNonQuery();
-
-
+                    
                     cmd.CommandText = "SP_TRNPROD_ENTRY_PR";
                     for (int i = 0; i < mcode.Count; i++)
                     {
@@ -899,13 +909,13 @@ namespace DataCollectorRestApi.Controllers
                 }
             }
         }
-        
+
 
         [Route("api/saveBoutData")]
-        [HttpGet("{bOutDataCollect}")]
-        public string saveBoutData(string bOutDataCollect)
+        //[HttpGet("{bOutDataCollect}")]
+        [HttpPost]
+        public string saveBoutData([FromBody]LoadBranchTransfer[] bOutDataCollect)
         {
-
             LoadBranchTransfer[] lbtJson;
             string SERVERDATE;
             string SERVERTIME;
@@ -928,8 +938,8 @@ namespace DataCollectorRestApi.Controllers
             List<decimal> NONTAXABLE = new List<decimal>();
             decimal DISCOUNT = 0;
 
-
-            lbtJson = JsonConvert.DeserializeObject<LoadBranchTransfer[]>(bOutDataCollect);
+            lbtJson = bOutDataCollect;
+            //lbtJson = JsonConvert.DeserializeObject<LoadBranchTransfer[]>(bOutDataCollect);
 
             using (SqlConnection conn = new SqlConnection(GlobalClass.DataConnectionString))
             using (SqlCommand cmd = conn.CreateCommand())
@@ -959,7 +969,7 @@ namespace DataCollectorRestApi.Controllers
                             trnAc = lbt.trnAc;
                             ParAc = lbt.ParAc;
                             trnMode = lbt.trnMode;
-                            refOrdBill = lbt.trnMode;
+                            refOrdBill = lbt.refOrdBill;
                             remarks = lbt.remarks;
                             wareHouse = lbt.wareHouse;
                             isTaxInvoice = lbt.isTaxInvoice;
@@ -1060,10 +1070,11 @@ namespace DataCollectorRestApi.Controllers
                 }
             }
         }
-
-        [Route("api/getBinData")]
-        [HttpGet("{bInDataCollect}")]
-        public string saveBinData(string bInDataCollect)
+     
+        [Route("api/saveBinData")]        
+        //[HttpGet("{bInDataCollect}")]
+        [HttpPost]
+        public string saveBinData([FromBody]LoadBranchTransfer[] bInDataCollect)
         {
             LoadBranchTransfer[] lbtJson;
             string SERVERDATE;
@@ -1087,8 +1098,9 @@ namespace DataCollectorRestApi.Controllers
             List<decimal> NONTAXABLE = new List<decimal>();
             decimal DISCOUNT = 0;
 
+            lbtJson = bInDataCollect;
 
-            lbtJson = JsonConvert.DeserializeObject<LoadBranchTransfer[]>(bInDataCollect);
+            //lbtJson = JsonConvert.DeserializeObject<LoadBranchTransfer[]>(bInDataCollect);
 
 
             using (SqlConnection conn = new SqlConnection(GlobalClass.DataConnectionString))
