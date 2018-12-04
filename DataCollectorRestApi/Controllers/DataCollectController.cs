@@ -181,12 +181,12 @@ namespace DataCollectorRestApi.Controllers
                 {
                     if (settingIndex == "1")
                     {
-                        dt = db.getData("SELECT MCODE, MENUCODE, DESCA, PARENT, TYPE, SUPCODE, ISNULL(BASEUNIT,'PC') BASEUNIT, RATE_A, PRATE_A, MGROUP, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE,'' CRDATE FROM MENUITEM WHERE TYPE = 'A'", cnMain);
+                        dt = db.getData("SELECT ISNULL(MCODE,'') MCODE,ISNULL(MENUCODE,'') MENUCODE,ISNULL(DESCA,'') DESCA,ISNULL(PARENT,'') PARENT,ISNULL(VAT,0) VAT,ISNULL(TYPE,'') TYPE, ISNULL(SUPCODE,'') SUPCODE, ISNULL(BASEUNIT,'PC') BASEUNIT,ISNULL(RATE_A,0) RATE_A, ISNULL(PRATE_A,0) PRATE_A,ISNULL(MGROUP,'') MGROUP, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE,'' CRDATE FROM MENUITEM WHERE TYPE = 'A'", cnMain);
                         //dt = db.getData("SELECT MENUCODE AS MCODE, MENUCODE, DESCRIPTION AS DESCA, PARENT,'' TYPE,'' SUPCODE,'' BASEUNIT,'' RATE_A,'' PRATE_A,'' MGROUP, '' EDATE,'' CRDATE  FROM MENUITEM_PART", cnMain);
                     }
                     else
                     {
-                        dt = db.getData("SELECT MCODE, MENUCODE, DESCA, PARENT, TYPE, SUPCODE, ISNULL(BASEUNIT,'PC') BASEUNIT, RATE_A, PRATE_A, MGROUP, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE,'' CRDATE FROM MENUITEM WHERE TYPE = 'A'", cnMain);
+                        dt = db.getData("SELECT ISNULL(MCODE,'') MCODE,ISNULL(MENUCODE,'') MENUCODE,ISNULL(DESCA,'') DESCA,ISNULL(PARENT,'') PARENT,ISNULL(VAT,0) VAT,ISNULL(TYPE,'') TYPE, ISNULL(SUPCODE,'') SUPCODE, ISNULL(BASEUNIT,'PC') BASEUNIT,ISNULL(RATE_A,0) RATE_A, ISNULL(PRATE_A,0) PRATE_A,ISNULL(MGROUP,'') MGROUP, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE,'' CRDATE FROM MENUITEM WHERE TYPE = 'A'", cnMain);
                     }
 
                     var retdt = DataTableToDictionary(dt);
@@ -214,11 +214,11 @@ namespace DataCollectorRestApi.Controllers
 
                     if (settingIndex == "1")
                     {
-                        dt = db.getData("SELECT BCODE, MCODE,'' SUPCODE,'' EDATE,'' EXPIRY,'' REMARKS FROM BarCode", cnMain);
+                        dt = db.getData("SELECT ISNULL(BCODE,'') BCODE,ISNULL(MCODE,'') MCODE,'' SUPCODE,'' EDATE,'' EXPIRY,'' REMARKS FROM BarCode", cnMain);
                     }
                     else
                     {
-                        dt = db.getData("SELECT BCODE, MCODE, ISNULL(SUPCODE,'') SUPCODE, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE, ISNULL(CONVERT(VARCHAR,EXPIRY,101),'') EXPIRY,REMARKS FROM BarCode", cnMain);
+                        dt = db.getData("SELECT ISNULL(BCODE,'') BCODE,ISNULL(MCODE,'') MCODE, ISNULL(SUPCODE,'') SUPCODE, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE, ISNULL(CONVERT(VARCHAR,EXPIRY,101),'') EXPIRY,REMARKS FROM BarCode", cnMain);
                     }
 
                     var retdt = DataTableToDictionary(dt);
@@ -343,7 +343,7 @@ namespace DataCollectorRestApi.Controllers
 
                     //dt = db.getData("SELECT NAME, ADDRESS, PHONE, REMARKS, ISDEFAULT,IsAdjustment,AdjustmentAcc,ISVIRTUAL,VIRTUAL_PARENT,'' DIVISION FROM RMD_WAREHOUSE", cnMain);
                                
-                    dt = db.getData("SELECT NAME, ADDRESS,DIVISION FROM RMD_WAREHOUSE", cnMain);
+                    dt = db.getData("SELECT NAME, ISNULL(ADDRESS,'') ADDRESS, ISNULL(DIVISION,'') DIVISION FROM RMD_WAREHOUSE", cnMain);
 
                     var retdt = DataTableToDictionary(dt);
                     return new OkObjectResult(retdt);
@@ -366,7 +366,7 @@ namespace DataCollectorRestApi.Controllers
                 dt = new DataTable();
                 try
                 {
-                    dt = db.getData("SELECT ACID, ACNAME, PARENT, ACCODE, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE, PTYPE FROM RMD_ACLIST", cnMain);
+                    dt = db.getData("SELECT ACID,ISNULL(ACNAME,'') ACNAME,ISNULL(PARENT,'') PARENT,ISNULL(ACCODE,'') ACCODE, ISNULL(CONVERT(VARCHAR,EDATE,101),'') EDATE, ISNULL(PTYPE,'') PTYPE FROM RMD_ACLIST", cnMain);
                     var retdt = DataTableToDictionary(dt);
                     return new OkObjectResult(retdt);
                 }
@@ -445,7 +445,7 @@ namespace DataCollectorRestApi.Controllers
                 dt = new DataTable();
                 try
                 {
-                    dt = db.getData("SELECT LOC_ID, NAME, WAREHOUSE, PARENT, LEVELS FROM RMD_LOCATION", cnMain);
+                    dt = db.getData("SELECT LOC_ID, ISNULL(NAME,'') NAME,ISNULL(WAREHOUSE,'') WAREHOUSE,ISNULL(PARENT,'') PARENT,ISNULL(LEVELS, '') LEVELS FROM RMD_LOCATION", cnMain);
                     var retdt = DataTableToDictionary(dt);
                     return new OkObjectResult(retdt);
                 }
